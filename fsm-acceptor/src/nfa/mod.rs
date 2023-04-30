@@ -9,6 +9,7 @@ use crate::arena::Arena;
 pub mod graphviz;
 pub mod state;
 
+#[derive(Debug)]
 pub struct Nfa<A: Alphabet> {
     states: Arena<State<A>>,
 }
