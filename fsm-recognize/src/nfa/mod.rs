@@ -1,77 +1,56 @@
 use std::collections::HashSet;
 use std::ops::{Index, IndexMut};
 
-use multimap::MultiMap;
+use state::{State, StateId};
 
 use crate::alphabet::Alphabet;
+use crate::arena::Arena;
 
-#[derive(Debug)]
-pub struct State<A: Alphabet> {
-    #[allow(dead_code)]
-    id: usize,
-    accepting: bool,
-    transitions: MultiMap<A, usize>,
-    epsilon_transitions: HashSet<usize>,
-}
-
-impl<A: Alphabet> State<A> {
-    pub fn new(id: usize, accepting: bool) -> Self {
-        Self {
-            id,
-            accepting,
-            transitions: MultiMap::new(),
-            epsilon_transitions: HashSet::new(),
-        }
-    }
-
-    pub fn next(&self, symbol: A) -> Option<Vec<usize>> {
-        self.transitions.get_vec(&symbol).cloned()
-    }
-}
+pub mod state;
 
 pub struct Nfa<A: Alphabet> {
-    states: Vec<State<A>>,
+    states: Arena<State<A>>,
 }
 
 impl<A: Alphabet> Nfa<A> {
     pub fn new() -> Self {
-        Self { states: Vec::new() }
+        Self {
+            states: Arena::new(),
+        }
     }
 
-    pub fn new_state(&mut self, accepting: bool) -> usize {
-        let id = self.states.len();
-        self.states.push(State::new(id, accepting));
-        id
+    pub fn new_state(&mut self, accepting: bool) -> StateId {
+        self.states.alloc_with_id(|id| State::new(id, accepting))
     }
 
-    pub fn state(&self, index: usize) -> &State<A> {
+    pub fn state(&self, index: StateId) -> &State<A> {
         &self.states[index]
     }
-    pub fn state_mut(&mut self, index: usize) -> &mut State<A> {
+    pub fn state_mut(&mut self, index: StateId) -> &mut State<A> {
         &mut self.states[index]
     }
 }
 
-impl<A: Alphabet> Index<usize> for Nfa<A> {
+impl<A: Alphabet> Index<StateId> for Nfa<A> {
     type Output = State<A>;
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.states[index]
+    fn index(&self, index: StateId) -> &Self::Output {
+        self.state(index)
     }
 }
 
-impl<A: Alphabet> IndexMut<usize> for Nfa<A> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.states[index]
+impl<A: Alphabet> IndexMut<StateId> for Nfa<A> {
+    fn index_mut(&mut self, index: StateId) -> &mut Self::Output {
+        self.state_mut(index)
     }
 }
 
 impl<A: Alphabet> Nfa<A> {
-    pub fn next(&self, current_state: usize, symbol: A) -> Option<Vec<usize>> {
+    pub fn next(&self, current_state: StateId, symbol: A) -> Option<Vec<StateId>> {
         self.state(current_state).next(symbol)
     }
 
-    fn reach_epsilon(&self, state: usize, visited: &mut HashSet<usize>) {
+    fn reach_epsilon(&self, state: StateId, visited: &mut HashSet<StateId>) {
         if visited.contains(&state) {
             return;
         }

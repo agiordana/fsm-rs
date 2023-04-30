@@ -1,69 +1,51 @@
-use std::collections::HashMap;
 use std::ops::{Index, IndexMut};
 
+use state::{State, StateId};
+
 use crate::alphabet::Alphabet;
+use crate::arena::Arena;
 
-#[derive(Debug)]
-pub struct State<A: Alphabet> {
-    #[allow(dead_code)]
-    id: usize,
-    accepting: bool,
-    transitions: HashMap<A, usize>,
-}
-
-impl<A: Alphabet> State<A> {
-    pub fn new(id: usize, accepting: bool) -> Self {
-        Self {
-            id,
-            accepting,
-            transitions: HashMap::new(),
-        }
-    }
-
-    pub fn next(&self, symbol: A) -> Option<usize> {
-        self.transitions.get(&symbol).copied()
-    }
-}
+pub mod state;
 
 pub struct Dfa<A: Alphabet> {
-    states: Vec<State<A>>,
+    states: Arena<State<A>>,
 }
 
 impl<A: Alphabet> Dfa<A> {
     pub fn new() -> Self {
-        Self { states: Vec::new() }
+        Self {
+            states: Arena::new(),
+        }
     }
 
-    pub fn new_state(&mut self, accepting: bool) -> usize {
-        let id = self.states.len();
-        self.states.push(State::new(id, accepting));
-        id
+    pub fn new_state(&mut self, accepting: bool) -> StateId {
+        self.states.alloc_with_id(|id| State::new(id, accepting))
     }
 
-    pub fn state(&self, index: usize) -> &State<A> {
+    pub fn state(&self, index: StateId) -> &State<A> {
         &self.states[index]
     }
-    pub fn state_mut(&mut self, index: usize) -> &mut State<A> {
+    pub fn state_mut(&mut self, index: StateId) -> &mut State<A> {
         &mut self.states[index]
     }
 }
 
-impl<A: Alphabet> Index<usize> for Dfa<A> {
+impl<A: Alphabet> Index<StateId> for Dfa<A> {
     type Output = State<A>;
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.states[index]
+    fn index(&self, index: StateId) -> &Self::Output {
+        self.state(index)
     }
 }
 
-impl<A: Alphabet> IndexMut<usize> for Dfa<A> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.states[index]
+impl<A: Alphabet> IndexMut<StateId> for Dfa<A> {
+    fn index_mut(&mut self, index: StateId) -> &mut Self::Output {
+        self.state_mut(index)
     }
 }
 
 impl<A: Alphabet> Dfa<A> {
-    pub fn next(&self, current_state: usize, symbol: A) -> Option<usize> {
+    pub fn next(&self, current_state: StateId, symbol: A) -> Option<StateId> {
         self.state(current_state).next(symbol)
     }
 
