@@ -6,6 +6,7 @@ use state::{State, StateId};
 use crate::alphabet::Alphabet;
 use crate::arena::Arena;
 
+pub mod graphviz;
 pub mod state;
 
 pub struct Nfa<A: Alphabet> {
@@ -19,15 +20,73 @@ impl<A: Alphabet> Nfa<A> {
         }
     }
 
-    pub fn new_state(&mut self, accepting: bool) -> StateId {
-        self.states.alloc_with_id(|id| State::new(id, accepting))
-    }
-
     pub fn state(&self, index: StateId) -> &State<A> {
         &self.states[index]
     }
     pub fn state_mut(&mut self, index: StateId) -> &mut State<A> {
         &mut self.states[index]
+    }
+
+    pub fn add_state(&mut self, accepting: bool) -> StateId {
+        self.states.alloc_with_id(|id| State::new(id, accepting))
+    }
+
+    pub fn add_transition(&mut self, from: StateId, symbol: A, to: StateId) {
+        self.state_mut(from).transitions.insert(symbol, to);
+    }
+
+    pub fn add_epsilon_transition(&mut self, from: StateId, to: StateId) {
+        self.state_mut(from).epsilon_transitions.insert(to);
+    }
+
+    pub fn num_states(&self) -> usize {
+        self.states.len()
+    }
+
+    pub fn num_transitions(&self) -> usize {
+        self.states
+            .iter()
+            .map(|state| {
+                state
+                    .transitions
+                    .iter_all()
+                    .map(|(_, to)| to.len())
+                    .sum::<usize>()
+            })
+            .sum()
+    }
+
+    pub fn num_epsilon_transitions(&self) -> usize {
+        self.states
+            .iter()
+            .map(|state| state.epsilon_transitions.len())
+            .sum()
+    }
+
+    pub fn states(&self) -> impl Iterator<Item = &State<A>> {
+        self.states.iter()
+    }
+
+    pub fn transitions(&self) -> impl Iterator<Item = (&State<A>, A, &State<A>)> + '_ {
+        self.states().flat_map(move |state| {
+            state
+                .transitions
+                .iter_all()
+                .flat_map(move |(symbol, to_all)| {
+                    to_all
+                        .iter()
+                        .map(move |to| (state, *symbol, self.state(*to)))
+                })
+        })
+    }
+
+    pub fn epsilon_transitions(&self) -> impl Iterator<Item = (&State<A>, &State<A>)> + '_ {
+        self.states().flat_map(move |state| {
+            state
+                .epsilon_transitions
+                .iter()
+                .map(move |to| (state, self.state(*to)))
+        })
     }
 }
 
@@ -116,8 +175,8 @@ mod tests {
         use Sigma::*;
 
         let mut nfa = Nfa::new();
-        nfa.new_state(true);
-        nfa.new_state(false);
+        nfa.add_state(true);
+        nfa.add_state(false);
         // Loops:
         nfa[0].transitions.insert(One, 0);
         nfa[1].transitions.insert(One, 1);
@@ -125,7 +184,7 @@ mod tests {
         nfa[0].transitions.insert(Zero, 1);
         nfa[1].transitions.insert(Zero, 0);
 
-        // NFA accepts all words with even number of Zeros
+        // This NFA accepts all words with even number of Zeros
         assert!(nfa.accepts(vec![]));
         assert!(nfa.accepts(vec![One]));
         assert!(nfa.accepts(vec![One, One]));

@@ -5,8 +5,10 @@ use state::{State, StateId};
 use crate::alphabet::Alphabet;
 use crate::arena::Arena;
 
+pub mod graphviz;
 pub mod state;
 
+#[derive(Debug)]
 pub struct Dfa<A: Alphabet> {
     states: Arena<State<A>>,
 }
@@ -18,15 +20,43 @@ impl<A: Alphabet> Dfa<A> {
         }
     }
 
-    pub fn new_state(&mut self, accepting: bool) -> StateId {
-        self.states.alloc_with_id(|id| State::new(id, accepting))
-    }
-
     pub fn state(&self, index: StateId) -> &State<A> {
         &self.states[index]
     }
     pub fn state_mut(&mut self, index: StateId) -> &mut State<A> {
         &mut self.states[index]
+    }
+
+    pub fn add_state(&mut self, accepting: bool) -> StateId {
+        self.states.alloc_with_id(|id| State::new(id, accepting))
+    }
+
+    pub fn add_transition(&mut self, from: StateId, symbol: A, to: StateId) {
+        self.state_mut(from).add_transition(symbol, to);
+    }
+
+    pub fn num_states(&self) -> usize {
+        self.states.len()
+    }
+
+    pub fn num_transitions(&self) -> usize {
+        self.states
+            .iter()
+            .map(|state| state.transitions.len())
+            .sum()
+    }
+
+    pub fn states(&self) -> impl Iterator<Item = &State<A>> {
+        self.states.iter()
+    }
+
+    pub fn transitions(&self) -> impl Iterator<Item = (&State<A>, A, &State<A>)> + '_ {
+        self.states().flat_map(move |state| {
+            state
+                .transitions
+                .iter()
+                .map(move |(symbol, to)| (state, *symbol, self.state(*to)))
+        })
     }
 }
 
@@ -88,8 +118,8 @@ mod tests {
         use Sigma::*;
 
         let mut dfa = Dfa::new();
-        dfa.new_state(true);
-        dfa.new_state(false);
+        dfa.add_state(true);
+        dfa.add_state(false);
         // Loops:
         dfa[0].transitions.insert(One, 0);
         dfa[1].transitions.insert(One, 1);

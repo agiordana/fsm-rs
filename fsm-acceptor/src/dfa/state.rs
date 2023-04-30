@@ -20,6 +20,10 @@ impl<A: Alphabet> State<A> {
         }
     }
 
+    pub fn add_transition(&mut self, symbol: A, to: StateId) {
+        self.transitions.insert(symbol, to);
+    }
+
     pub fn next(&self, symbol: A) -> Option<StateId> {
         self.transitions.get(&symbol).copied()
     }
