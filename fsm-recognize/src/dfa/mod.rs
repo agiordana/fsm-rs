@@ -30,6 +30,12 @@ impl<A: Alphabet> Dfa<A> {
     }
 }
 
+impl<A: Alphabet> Default for Dfa<A> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<A: Alphabet> Index<StateId> for Dfa<A> {
     type Output = State<A>;
 

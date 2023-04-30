@@ -28,6 +28,12 @@ impl<T> Arena<T> {
     }
 }
 
+impl<T> Default for Arena<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> Index<usize> for Arena<T> {
     type Output = T;
 
