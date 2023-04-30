@@ -1,36 +1,46 @@
 use std::fmt::Display;
+use std::io::Write;
 
 use crate::alphabet::Alphabet;
 use crate::dfa::Dfa;
 
-pub fn dfa_to_graphviz<A: Alphabet>(dfa: &Dfa<A>) -> String
+pub fn render_dfa<A: Alphabet>(dfa: &Dfa<A>) -> String
 where
     A: Display,
 {
-    let mut out = String::new();
-    out += "digraph {\n";
-    out += "  rankdir=LR;\n";
-    out += "  // Nodes:\n";
+    let mut out = Vec::new();
+    render_dfa_to(dfa, &mut out).unwrap();
+    String::from_utf8(out).unwrap()
+}
+
+pub fn render_dfa_to<A: Alphabet, W: Write>(dfa: &Dfa<A>, out: &mut W) -> std::io::Result<()>
+where
+    A: Display,
+{
+    writeln!(out, "digraph {{")?;
+    writeln!(out, "  rankdir=LR;")?;
+    writeln!(out, "  // States: {}", dfa.num_states())?;
     for state in dfa.states() {
-        out += &format!(
-            "  {} [shape={}];\n",
+        writeln!(
+            out,
+            "  {} [shape={}];",
             state.id,
             if state.accepting {
                 "doublecircle"
             } else {
                 "circle"
             }
-        );
+        )?;
     }
     if !dfa.states.is_empty() {
-        out += "  // Initial state:\n";
-        out += "  start [shape=point, color=black];\n";
-        out += &format!("  start -> 0;\n");
+        writeln!(out, "  // Initial state:")?;
+        writeln!(out, "  start [shape=point, color=black];")?;
+        writeln!(out, "  start -> 0;")?;
     }
-    out += "  // Transitions:\n";
+    writeln!(out, "  // Transitions: {}", dfa.num_transitions())?;
     for (from, symbol, to) in dfa.transitions() {
-        out += &format!("  {} -> {} [label=\"{}\"];\n", from.id, to.id, symbol);
+        writeln!(out, "  {} -> {} [label=\"{}\"];", from.id, to.id, symbol)?;
     }
-    out += "}";
-    out
+    write!(out, "}}")?;
+    Ok(())
 }

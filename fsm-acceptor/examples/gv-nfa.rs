@@ -1,4 +1,4 @@
-use fsm_acceptor::nfa::graphviz::nfa_to_graphviz;
+use fsm_acceptor::nfa::graphviz::render_nfa;
 use fsm_acceptor::nfa::Nfa;
 
 fn main() -> color_eyre::Result<()> {
@@ -11,7 +11,7 @@ fn main() -> color_eyre::Result<()> {
     nfa.add_transition(p, 'b', p);
     nfa.add_transition(p, 'b', q);
     // println!("nfa = {:?}", nfa);
-    println!("{}", nfa_to_graphviz(&nfa));
+    println!("{}", render_nfa(&nfa));
 
     Ok(())
 }
