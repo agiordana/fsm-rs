@@ -11,6 +11,7 @@ fn main() -> color_eyre::Result<()> {
     nfa.add_transition(p, 'a', p);
     nfa.add_transition(p, 'b', p);
     nfa.add_transition(p, 'b', q);
+    nfa.add_epsilon_transition(q, q);
     // println!("nfa = {:?}", nfa);
     println!("{}", render_nfa(&nfa));
 
