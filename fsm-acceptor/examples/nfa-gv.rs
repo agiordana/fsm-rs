@@ -7,6 +7,7 @@ fn main() -> color_eyre::Result<()> {
     let mut nfa = Nfa::new();
     let p = nfa.add_state(false);
     let q = nfa.add_state(true);
+    let _s = nfa.add_state(true);
     nfa.add_transition(p, 'a', p);
     nfa.add_transition(p, 'b', p);
     nfa.add_transition(p, 'b', q);

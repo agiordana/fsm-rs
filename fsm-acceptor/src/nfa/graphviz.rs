@@ -41,11 +41,7 @@ where
     for (from, symbol, to) in nfa.transitions() {
         writeln!(out, "  {} -> {} [label=\"{}\"];", from.id, to.id, symbol)?;
     }
-    writeln!(
-        out,
-        "  // ε-Transitions: {}",
-        nfa.num_epsilon_transitions()
-    )?;
+    writeln!(out, "  // ε-Transitions: {}", nfa.num_epsilon_transitions())?;
     for (from, to) in nfa.epsilon_transitions() {
         writeln!(out, "  {} -> {} [label=\"ε\"];", from.id, to.id)?;
     }
