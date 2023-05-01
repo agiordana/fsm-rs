@@ -36,11 +36,11 @@ impl<A: Alphabet> Nfa<A> {
     }
 
     pub fn add_transition(&mut self, from: StateId, symbol: A, to: StateId) {
-        self.state_mut(from).transitions.insert(symbol, to);
+        self.state_mut(from).add_transition(symbol, to);
     }
 
     pub fn add_epsilon_transition(&mut self, from: StateId, to: StateId) {
-        self.state_mut(from).epsilon_transitions.insert(to);
+        self.state_mut(from).add_epsilon_transition(to);
     }
 
     pub fn num_states(&self) -> usize {
@@ -182,13 +182,13 @@ mod tests {
         nfa.add_state(true);
         nfa.add_state(false);
         // Loops:
-        nfa[0].transitions.insert(One, 0);
-        nfa[1].transitions.insert(One, 1);
+        nfa.add_transition(0, One, 0);
+        nfa.add_transition(1, One, 1);
         // Transitions:
-        nfa[0].transitions.insert(Zero, 1);
-        nfa[1].transitions.insert(Zero, 0);
+        nfa.add_transition(0, Zero, 1);
+        nfa.add_transition(1, Zero, 0);
 
-        // This NFA accepts all words with even number of Zeros
+        // This NFA (actually, DFA) accepts all words with even number of Zeros
         assert!(nfa.accepts(vec![]));
         assert!(nfa.accepts(vec![One]));
         assert!(nfa.accepts(vec![One, One]));
@@ -202,5 +202,37 @@ mod tests {
         assert!(!nfa.accepts(vec![One, One, Zero]));
         assert!(!nfa.accepts(vec![One, One, Zero, Zero, Zero]));
         assert!(!nfa.accepts(vec![One, One, Zero, Zero, One, Zero]));
+    }
+
+    #[test]
+    fn test_simple_nfa() {
+        #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+        enum Sigma {
+            Zero,
+            One,
+        }
+        use Sigma::*;
+
+        let mut nfa = Nfa::new();
+        nfa.add_state(false);
+        nfa.add_state(true);
+        nfa.add_epsilon_transition(0, 0);
+        nfa.add_transition(0, Zero, 0);
+        nfa.add_transition(0, One, 0);
+        nfa.add_transition(0, One, 1);
+        nfa.add_transition(1, Zero, 0);
+        nfa.add_transition(1, One, 1);
+
+        // This NFA accepts only words ending with One
+        assert!(nfa.accepts(vec![One]));
+        assert!(nfa.accepts(vec![Zero, One]));
+        assert!(nfa.accepts(vec![Zero, Zero, One]));
+        assert!(nfa.accepts(vec![Zero, One, Zero, One]));
+        assert!(nfa.accepts(vec![One, Zero, Zero, Zero, One]));
+        assert!(!nfa.accepts(vec![One, Zero]));
+        assert!(!nfa.accepts(vec![One, Zero, Zero]));
+        assert!(!nfa.accepts(vec![One, Zero, Zero, Zero]));
+        assert!(!nfa.accepts(vec![One, Zero, Zero, Zero]));
+        assert!(!nfa.accepts(vec![One, One, Zero, Zero]));
     }
 }

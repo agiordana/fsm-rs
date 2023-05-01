@@ -25,6 +25,14 @@ impl<A: Alphabet> State<A> {
         }
     }
 
+    pub fn add_transition(&mut self, symbol: A, to: StateId) {
+        self.transitions.insert(symbol, to);
+    }
+
+    pub fn add_epsilon_transition(&mut self, to: StateId) {
+        self.epsilon_transitions.insert(to);
+    }
+
     pub fn next(&self, symbol: A) -> Option<Vec<StateId>> {
         self.transitions.get_vec(&symbol).cloned()
     }

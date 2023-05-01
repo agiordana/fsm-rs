@@ -124,13 +124,13 @@ mod tests {
         dfa.add_state(true);
         dfa.add_state(false);
         // Loops:
-        dfa[0].transitions.insert(One, 0);
-        dfa[1].transitions.insert(One, 1);
+        dfa.add_transition(0, One, 0);
+        dfa.add_transition(1, One, 1);
         // Transitions:
-        dfa[0].transitions.insert(Zero, 1);
-        dfa[1].transitions.insert(Zero, 0);
+        dfa.add_transition(0, Zero, 1);
+        dfa.add_transition(1, Zero, 0);
 
-        // NFA accepts all words with even number of Zeros
+        // This DFA accepts all words with even number of Zeros
         assert!(dfa.accepts(vec![]));
         assert!(dfa.accepts(vec![One]));
         assert!(dfa.accepts(vec![One, One]));
