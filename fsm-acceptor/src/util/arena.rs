@@ -12,9 +12,7 @@ impl<T> Arena<T> {
     }
 
     pub fn alloc(&mut self, item: T) -> usize {
-        let id = self.next_id();
-        self.items.push(item);
-        id
+        self.alloc_with_id(|_| item)
     }
 
     pub fn alloc_with_id<F>(&mut self, f: F) -> usize
