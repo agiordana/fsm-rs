@@ -11,8 +11,8 @@ pub type StateId = usize;
 pub struct State<A: Alphabet> {
     pub id: StateId,
     pub accepting: bool,
-    pub transitions: MultiMap<A, StateId>,
-    pub epsilon_transitions: HashSet<StateId>,
+    pub(crate) transitions: MultiMap<A, StateId>,
+    pub(crate) epsilon_transitions: HashSet<StateId>,
 }
 
 impl<A: Alphabet> State<A> {
@@ -33,7 +33,11 @@ impl<A: Alphabet> State<A> {
         self.epsilon_transitions.insert(to);
     }
 
-    pub fn next(&self, symbol: A) -> Option<Vec<StateId>> {
-        self.transitions.get_vec(&symbol).cloned()
+    pub fn next(&self, symbol: A) -> Option<&Vec<StateId>> {
+        self.transitions.get_vec(&symbol) //.cloned()
+    }
+
+    pub fn next_epsilon(&self) -> &HashSet<StateId> {
+        &self.epsilon_transitions
     }
 }

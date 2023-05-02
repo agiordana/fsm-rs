@@ -1,10 +1,11 @@
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::ops::{Index, IndexMut};
 
 use state::{State, StateId};
 
 use crate::alphabet::Alphabet;
-use crate::arena::Arena;
+use crate::dfa::Dfa;
+use crate::util::arena::Arena;
 
 pub mod graphviz;
 pub mod state;
@@ -115,18 +116,56 @@ impl<A: Alphabet> IndexMut<StateId> for Nfa<A> {
 }
 
 impl<A: Alphabet> Nfa<A> {
-    pub fn next(&self, current_state: StateId, symbol: A) -> Option<Vec<StateId>> {
-        self.state(current_state).next(symbol)
+    pub fn next(&self, state: StateId, symbol: A) -> Option<&Vec<StateId>> {
+        self.state(state).next(symbol)
     }
 
-    fn reach_epsilon(&self, state: StateId, visited: &mut HashSet<StateId>) {
-        if visited.contains(&state) {
-            return;
+    pub fn next_epsilon(&self, state: StateId) -> &HashSet<StateId> {
+        self.state(state).next_epsilon()
+    }
+
+    fn multi_next_epsilon_closure(
+        &self,
+        current_states: impl IntoIterator<Item = StateId>,
+        symbol: A,
+    ) -> BTreeSet<StateId> {
+        let mut res = BTreeSet::new();
+        for state in current_states.into_iter() {
+            if let Some(next_states) = self.next(state, symbol) {
+                res.extend(self.multi_epsilon_closure(next_states.clone()))
+            }
         }
-        visited.insert(state);
-        for &x in self.state(state).epsilon_transitions.iter() {
-            self.reach_epsilon(x, visited);
+        res
+    }
+
+    // fn reach_epsilon_recur(&self, state: StateId, visited: &mut impl Set<StateId>) {
+    //     // Note: the caller has to ensure that `visited` is epsilon-closed!
+    //     if visited.contains(&state) {
+    //         return;
+    //     }
+    //     visited.insert(state);
+    //     for &x in self.state(state).next_epsilon() {
+    //         self.reach_epsilon_recur(x, visited);
+    //     }
+    // }
+
+    fn epsilon_closure(&self, start: StateId) -> BTreeSet<StateId> {
+        self.multi_epsilon_closure(vec![start])
+    }
+
+    fn multi_epsilon_closure(&self, start: Vec<StateId>) -> BTreeSet<StateId> {
+        let mut visited = BTreeSet::new();
+        let mut stack = start;
+
+        while let Some(state) = stack.pop() {
+            if visited.insert(state) {
+                for &next_state in self.next_epsilon(state) {
+                    stack.push(next_state);
+                }
+            }
         }
+
+        visited
     }
 
     pub fn accepts<I>(&self, word: I) -> bool
@@ -137,31 +176,65 @@ impl<A: Alphabet> Nfa<A> {
             return false;
         }
 
-        let mut current_states = HashSet::new();
-        self.reach_epsilon(0, &mut current_states);
+        let mut current_states = self.epsilon_closure(0);
 
         for symbol in word {
-            let mut next_states = HashSet::new();
-
-            for state in current_states {
-                if let Some(transitions) = self.next(state, symbol) {
-                    for next_state in transitions {
-                        next_states.insert(next_state);
-                    }
-                }
-            }
-
-            current_states = next_states;
-            let mut visited = HashSet::new();
-            for state in current_states {
-                self.reach_epsilon(state, &mut visited);
-            }
-            current_states = visited;
+            // let mut next_states = HashSet::new();
+            // for state in current_states {
+            //     if let Some(next) = self.next(state, symbol) {
+            //         next_states.extend(self.multi_epsilon_closure(next.clone()));
+            //     }
+            // }
+            // current_states = next_states;
+            current_states = self.multi_next_epsilon_closure(current_states, symbol);
         }
 
+        // self.is_accepting(&current_states)
         current_states
             .into_iter()
             .any(|state| self.state(state).accepting)
+    }
+
+    fn is_accepting<'a>(&self, states: impl IntoIterator<Item = &'a StateId>) -> bool {
+        states.into_iter().any(|&s| self.state(s).accepting)
+    }
+
+    pub fn to_dfa(&self, alphabet: &[A]) -> Dfa<A> {
+        let mut dfa = Dfa::new();
+        let mut state_map = HashMap::new();
+        let mut queue = Vec::new();
+
+        let initial_nfa_state = self.epsilon_closure(0);
+        let initial_state = dfa.add_state(self.is_accepting(&initial_nfa_state));
+        state_map.insert(initial_nfa_state.clone(), initial_state);
+        queue.push(initial_nfa_state);
+
+        while let Some(current_nfa_state) = queue.pop() {
+            let current_state = state_map[&current_nfa_state];
+
+            for &symbol in alphabet {
+                let mut next_nfa_state = BTreeSet::new();
+                for &nfa_state in &current_nfa_state {
+                    if let Some(next) = self.next(nfa_state, symbol) {
+                        next_nfa_state.extend(self.multi_epsilon_closure(next.clone()));
+                    }
+                }
+
+                if !next_nfa_state.is_empty() {
+                    let next_dfa_state =
+                        *state_map
+                            .entry(next_nfa_state.clone())
+                            .or_insert_with(|| {
+                                let new_dfa_state = dfa.add_state(self.is_accepting(&next_nfa_state));
+                                queue.push(next_nfa_state);
+                                new_dfa_state
+                            });
+                    dfa.add_transition(current_state, symbol, next_dfa_state);
+                }
+            }
+        }
+
+        dfa
     }
 }
 
@@ -234,5 +307,39 @@ mod tests {
         assert!(!nfa.accepts(vec![One, Zero, Zero, Zero]));
         assert!(!nfa.accepts(vec![One, Zero, Zero, Zero]));
         assert!(!nfa.accepts(vec![One, One, Zero, Zero]));
+    }
+
+    #[test]
+    fn test_nfa_to_dfa() {
+        #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+        enum Sigma {
+            Zero,
+            One,
+        }
+        use Sigma::*;
+
+        let mut nfa = Nfa::new();
+        nfa.add_state(false);
+        nfa.add_state(true);
+        nfa.add_epsilon_transition(0, 0);
+        nfa.add_transition(0, Zero, 0);
+        nfa.add_transition(0, One, 0);
+        nfa.add_transition(0, One, 1);
+        nfa.add_transition(1, Zero, 0);
+        nfa.add_transition(1, One, 1);
+
+        let dfa = nfa.to_dfa(&[Zero, One]);
+
+        // This DFA accepts only words ending with One
+        assert!(dfa.accepts(vec![One]));
+        assert!(dfa.accepts(vec![Zero, One]));
+        assert!(dfa.accepts(vec![Zero, Zero, One]));
+        assert!(dfa.accepts(vec![Zero, One, Zero, One]));
+        assert!(dfa.accepts(vec![One, Zero, Zero, Zero, One]));
+        assert!(!dfa.accepts(vec![One, Zero]));
+        assert!(!dfa.accepts(vec![One, Zero, Zero]));
+        assert!(!dfa.accepts(vec![One, Zero, Zero, Zero]));
+        assert!(!dfa.accepts(vec![One, Zero, Zero, Zero]));
+        assert!(!dfa.accepts(vec![One, One, Zero, Zero]));
     }
 }

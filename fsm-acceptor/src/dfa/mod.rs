@@ -3,7 +3,7 @@ use std::ops::{Index, IndexMut};
 use state::{State, StateId};
 
 use crate::alphabet::Alphabet;
-use crate::arena::Arena;
+use crate::util::arena::Arena;
 
 pub mod graphviz;
 pub mod state;
