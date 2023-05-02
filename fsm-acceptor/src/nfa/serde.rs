@@ -10,6 +10,7 @@ use super::State;
 impl<A: Alphabet + Serialize> Serialize for Nfa<A> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         #[derive(Serialize)]
+        #[serde(rename = "Nfa")]
         struct NfaHelper<'a, A: Alphabet> {
             states: Vec<&'a State<A>>,
         }
@@ -27,6 +28,7 @@ impl<'de, A: Alphabet + Deserialize<'de>> Deserialize<'de> for Nfa<A> {
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
+        #[serde(rename = "Nfa")]
         struct NfaHelper<A: Alphabet> {
             states: Vec<State<A>>,
         }
