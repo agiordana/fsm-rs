@@ -34,7 +34,7 @@ impl<A: Alphabet> State<A> {
     }
 
     pub fn next(&self, symbol: A) -> Option<&Vec<StateId>> {
-        self.transitions.get_vec(&symbol) //.cloned()
+        self.transitions.get_vec(&symbol)
     }
 
     pub fn next_epsilon(&self) -> &HashSet<StateId> {

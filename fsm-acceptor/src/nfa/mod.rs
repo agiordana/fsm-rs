@@ -124,31 +124,6 @@ impl<A: Alphabet> Nfa<A> {
         self.state(state).next_epsilon()
     }
 
-    fn multi_next_epsilon_closure(
-        &self,
-        current_states: impl IntoIterator<Item = StateId>,
-        symbol: A,
-    ) -> BTreeSet<StateId> {
-        let mut res = BTreeSet::new();
-        for state in current_states.into_iter() {
-            if let Some(next_states) = self.next(state, symbol) {
-                res.extend(self.multi_epsilon_closure(next_states.clone()))
-            }
-        }
-        res
-    }
-
-    // fn reach_epsilon_recur(&self, state: StateId, visited: &mut impl Set<StateId>) {
-    //     // Note: the caller has to ensure that `visited` is epsilon-closed!
-    //     if visited.contains(&state) {
-    //         return;
-    //     }
-    //     visited.insert(state);
-    //     for &x in self.state(state).next_epsilon() {
-    //         self.reach_epsilon_recur(x, visited);
-    //     }
-    // }
-
     fn epsilon_closure(&self, start: StateId) -> BTreeSet<StateId> {
         self.multi_epsilon_closure(vec![start])
     }
@@ -168,6 +143,24 @@ impl<A: Alphabet> Nfa<A> {
         visited
     }
 
+    fn multi_next_epsilon_closure(
+        &self,
+        current_states: impl IntoIterator<Item = StateId>,
+        symbol: A,
+    ) -> BTreeSet<StateId> {
+        let mut res = BTreeSet::new();
+        for state in current_states.into_iter() {
+            if let Some(next_states) = self.next(state, symbol) {
+                res.extend(self.multi_epsilon_closure(next_states.clone()))
+            }
+        }
+        res
+    }
+
+    fn is_accepting(&self, states: impl IntoIterator<Item = StateId>) -> bool {
+        states.into_iter().any(|s| self.state(s).accepting)
+    }
+
     pub fn accepts<I>(&self, word: I) -> bool
     where
         I: IntoIterator<Item = A>,
@@ -179,24 +172,10 @@ impl<A: Alphabet> Nfa<A> {
         let mut current_states = self.epsilon_closure(0);
 
         for symbol in word {
-            // let mut next_states = HashSet::new();
-            // for state in current_states {
-            //     if let Some(next) = self.next(state, symbol) {
-            //         next_states.extend(self.multi_epsilon_closure(next.clone()));
-            //     }
-            // }
-            // current_states = next_states;
             current_states = self.multi_next_epsilon_closure(current_states, symbol);
         }
 
-        // self.is_accepting(&current_states)
-        current_states
-            .into_iter()
-            .any(|state| self.state(state).accepting)
-    }
-
-    fn is_accepting<'a>(&self, states: impl IntoIterator<Item = &'a StateId>) -> bool {
-        states.into_iter().any(|&s| self.state(s).accepting)
+        self.is_accepting(current_states)
     }
 
     pub fn to_dfa(&self, alphabet: &[A]) -> Dfa<A> {
@@ -205,7 +184,7 @@ impl<A: Alphabet> Nfa<A> {
         let mut queue = Vec::new();
 
         let initial_nfa_state = self.epsilon_closure(0);
-        let initial_state = dfa.add_state(self.is_accepting(&initial_nfa_state));
+        let initial_state = dfa.add_state(self.is_accepting(initial_nfa_state.iter().copied()));
         state_map.insert(initial_nfa_state.clone(), initial_state);
         queue.push(initial_nfa_state);
 
@@ -222,13 +201,12 @@ impl<A: Alphabet> Nfa<A> {
 
                 if !next_nfa_state.is_empty() {
                     let next_dfa_state =
-                        *state_map
-                            .entry(next_nfa_state.clone())
-                            .or_insert_with(|| {
-                                let new_dfa_state = dfa.add_state(self.is_accepting(&next_nfa_state));
-                                queue.push(next_nfa_state);
-                                new_dfa_state
-                            });
+                        *state_map.entry(next_nfa_state.clone()).or_insert_with(|| {
+                            let new_dfa_state =
+                                dfa.add_state(self.is_accepting(next_nfa_state.iter().copied()));
+                            queue.push(next_nfa_state);
+                            new_dfa_state
+                        });
                     dfa.add_transition(current_state, symbol, next_dfa_state);
                 }
             }
