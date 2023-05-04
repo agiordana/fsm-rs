@@ -1,0 +1,57 @@
+= Finite State Machines
+
+image:https://github.com/Lipen/fsm-rs/workflows/CI/badge.svg["Build Status",link="https://github.com/Lipen/fsm-rs/actions"]
+
+== Examples
+
+=== Deterministic Finite Automaton (DFA)
+
+[source,rust,linenums]
+----
+use fsm_acceptor::dfa::Dfa;
+
+fn main() {
+    let mut dfa: Dfa<char> = Dfa::new();
+    let a = dfa.add_state(false);
+    let b = dfa.add_state(true);
+    dfa.add_transition(a, '0', b);
+    dfa.add_transition(a, '1', a);
+    dfa.add_transition(b, '1', a);
+    dfa.add_transition(b, '0', b);
+
+    // This DFA accepts words with even number of zeros
+    assert!(dfa.accepts("".chars()));
+    assert!(dfa.accepts("01101".chars()));
+    assert!(dfa.accepts("100".chars()));
+    assert!(!dfa.accepts("10".chars()));
+    assert!(!dfa.accepts("0010".chars()));
+    assert!(!dfa.accepts("11110".chars()));
+}
+----
+
+=== Nondeterministic Finite Automaton (NFA)
+
+[source,rust,linenums]
+----
+use fsm_acceptor::nfa::Nfa;
+
+fn main() {
+    let mut nfa: Nfa<char> = Nfa::new();
+    let a = nfa.add_state(false);
+    let b = nfa.add_state(true);
+    nfa.add_epsilon_transition(a, a);
+    nfa.add_transition(a, '0', a);
+    nfa.add_transition(a, '1', a);
+    nfa.add_transition(a, '1', b);
+    nfa.add_transition(b, '0', a);
+    nfa.add_transition(b, '1', b);
+
+    // This NFA accepts words ending with '1'
+    assert!(nfa.accepts("1".chars()));
+    assert!(nfa.accepts("0101".chars()));
+    assert!(nfa.accepts("00000001".chars()));
+    assert!(!nfa.accepts("".chars()));
+    assert!(!nfa.accepts("00000".chars()));
+    assert!(!nfa.accepts("11110".chars()));
+}
+----
