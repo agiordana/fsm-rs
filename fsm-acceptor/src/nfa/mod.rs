@@ -161,10 +161,7 @@ impl<A: Alphabet> Nfa<A> {
         states.into_iter().any(|s| self.state(s).accepting)
     }
 
-    pub fn accepts<I>(&self, word: I) -> bool
-    where
-        I: IntoIterator<Item = A>,
-    {
+    pub fn accepts(&self, word: impl IntoIterator<Item = A>) -> bool {
         if self.states.is_empty() {
             return false;
         }
