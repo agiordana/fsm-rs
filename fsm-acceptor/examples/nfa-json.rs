@@ -23,11 +23,11 @@ fn main() -> color_eyre::Result<()> {
     println!("nfa2 = {:?}", nfa2);
 
     let json3 = "{\"states\": [
-        {\"id\": 1, \"accepting\": true,
-         \"transitions\": {\"b\": [0], \"a\": [1]},
-         \"epsilon_transitions\": [0]},
-        {\"id\": 0, \"accepting\": false,
-         \"transitions\": {\"a\": [1], \"b\": [0]},
+        {\"id\": 42, \"accepting\": true,
+         \"transitions\": {\"b\": [10], \"a\": [42]},
+         \"epsilon_transitions\": [10]},
+        {\"id\": 10, \"accepting\": false,
+         \"transitions\": {\"a\": [42], \"b\": [10]},
          \"epsilon_transitions\": []}
     ]}";
     println!("json3 = {}", json3);

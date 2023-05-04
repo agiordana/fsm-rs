@@ -21,8 +21,8 @@ fn main() -> color_eyre::Result<()> {
     println!("dfa2 = {:?}", dfa2);
 
     let json3 = "{\"states\": [
-        {\"id\": 1, \"accepting\": true, \"transitions\": {\"b\": 0, \"a\": 1}},
-        {\"id\": 0, \"accepting\": false, \"transitions\": {\"a\": 1, \"b\": 0}}
+        {\"id\": 10, \"accepting\": true, \"transitions\": {\"b\": 10, \"a\": 42}},
+        {\"id\": 42, \"accepting\": false, \"transitions\": {\"a\": 42, \"b\": 10}}
     ]}";
     println!("json3 = {}", json3);
 
