@@ -1,7 +1,9 @@
 use std::collections::VecDeque;
 
 #[inline]
-pub fn decltype<T>(_:&T,x:T)->T{x}
+pub fn decltype<T>(_: &T, x: T) -> T {
+    x
+}
 
 pub fn generate_words(symbols: &[char], max_length: usize) -> Vec<String> {
     let mut words = Vec::new();
