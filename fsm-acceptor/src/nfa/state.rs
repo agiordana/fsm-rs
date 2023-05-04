@@ -7,7 +7,7 @@ use crate::alphabet::Alphabet;
 pub type StateId = usize;
 
 #[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct State<A: Alphabet> {
     pub id: StateId,
     pub accepting: bool,
