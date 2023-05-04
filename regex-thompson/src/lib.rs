@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug)]
@@ -49,11 +49,25 @@ impl States {
     pub fn state_mut(&mut self, index: usize) -> &mut State {
         &mut self.states[index]
     }
+}
 
+impl Index<usize> for States {
+    type Output = State;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.states[index]
+    }
+}
+
+impl IndexMut<usize> for States {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.states[index]
+    }
+}
+
+impl States {
     pub fn parse(&mut self, pattern: &str) -> Fragment {
         let postfix = to_postfix(&insert_explicit_concat_operator(pattern));
-        dbg!(&pattern);
-        dbg!(&postfix);
         let mut stack = Vec::new();
         for token in postfix.chars() {
             match token {
@@ -126,28 +140,36 @@ impl States {
         Fragment { start, end }
     }
 
-    fn reach_epsilon(&self, state: usize, visited: &mut HashSet<usize>) {
-        if visited.contains(&state) {
-            return;
+    fn epsilon_closure(&self, start: usize) -> BTreeSet<usize> {
+        self.multi_epsilon_closure(vec![start])
+    }
+
+    fn multi_epsilon_closure(&self, start: Vec<usize>) -> BTreeSet<usize> {
+        let mut visited = BTreeSet::new();
+        let mut stack = start;
+
+        while let Some(state) = stack.pop() {
+            if visited.insert(state) {
+                for &next_state in self.state(state).epsilon_transitions.iter() {
+                    stack.push(next_state);
+                }
+            }
         }
-        visited.insert(state);
-        for &x in self.state(state).epsilon_transitions.iter() {
-            self.reach_epsilon(x, visited);
-        }
+
+        visited
     }
 
     pub fn matches(&self, start: usize, s: &str) -> bool {
-        let mut current_states = HashSet::new();
-        self.reach_epsilon(start, &mut current_states);
+        let mut current_states = self.epsilon_closure(start);
 
         for c in s.chars() {
-            let mut next_states = HashSet::new();
+            let mut next_states = BTreeSet::new();
 
-            for &state in current_states.iter() {
+            for state in current_states {
                 if let Some(&next_state) = self.state(state).transitions.get(&c) {
-                    self.reach_epsilon(next_state, &mut next_states);
+                    next_states.extend(self.epsilon_closure(next_state));
                 } else if let Some(&next_state) = self.state(state).transitions.get(&'.') {
-                    self.reach_epsilon(next_state, &mut next_states);
+                    next_states.extend(self.epsilon_closure(next_state));
                 }
             }
 
@@ -155,22 +177,8 @@ impl States {
         }
 
         current_states
-            .iter()
-            .any(|&state| self.state(state).accepting)
-    }
-}
-
-impl Index<usize> for States {
-    type Output = State;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.states[index]
-    }
-}
-
-impl IndexMut<usize> for States {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.states[index]
+            .into_iter()
+            .any(|state| self.state(state).accepting)
     }
 }
 
