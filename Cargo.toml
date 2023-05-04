@@ -14,4 +14,3 @@ members = [
 ]
 
 [dependencies]
-color-eyre = "0.6.2"
