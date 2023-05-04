@@ -33,25 +33,23 @@ impl<'de, A: Alphabet + Deserialize<'de>> Deserialize<'de> for Nfa<A> {
             states: Vec<State<A>>,
         }
 
-        let mut helper = NfaHelper::deserialize(deserializer)?;
-        helper.states.sort_by_key(|state| state.id);
-        let mut dfa = Nfa::new();
-        let mut old2new = HashMap::with_capacity(helper.states.len());
-        for state in &helper.states {
-            let new_id = dfa.add_state(state.accepting);
-            old2new.insert(state.id, new_id);
-        }
-        for (&old_from, &new_from) in &old2new {
-            for (&symbol, all_old_to) in &helper.states[old_from].transitions {
-                for old_to in all_old_to {
-                    dfa.add_transition(new_from, symbol, old2new[old_to]);
-                }
+        let helper = NfaHelper::deserialize(deserializer)?;
+        let mut nfa = Nfa::new();
+        let old2new: HashMap<_, _> = helper
+            .states
+            .iter()
+            .map(|state| (state.id, nfa.add_state(state.accepting)))
+            .collect();
+        for old_from_state in &helper.states {
+            let new_from = old2new[&old_from_state.id];
+            for (symbol, old_to) in old_from_state.transitions() {
+                nfa.add_transition(new_from, symbol, old2new[&old_to]);
             }
-            for old_to in &helper.states[old_from].epsilon_transitions {
-                dfa.add_epsilon_transition(new_from, old2new[old_to]);
+            for &old_to in old_from_state.next_epsilon() {
+                nfa.add_epsilon_transition(new_from, old2new[&old_to]);
             }
         }
-        Ok(dfa)
+        Ok(nfa)
     }
 }
 

@@ -51,20 +51,14 @@ impl<A: Alphabet> Nfa<A> {
     pub fn num_transitions(&self) -> usize {
         self.states
             .iter()
-            .map(|state| {
-                state
-                    .transitions
-                    .iter_all()
-                    .map(|(_, to)| to.len())
-                    .sum::<usize>()
-            })
+            .map(|state| state.num_transitions())
             .sum()
     }
 
     pub fn num_epsilon_transitions(&self) -> usize {
         self.states
             .iter()
-            .map(|state| state.epsilon_transitions.len())
+            .map(|state| state.next_epsilon().len())
             .sum()
     }
 
@@ -75,20 +69,15 @@ impl<A: Alphabet> Nfa<A> {
     pub fn transitions(&self) -> impl Iterator<Item = (&State<A>, A, &State<A>)> + '_ {
         self.states().flat_map(move |state| {
             state
-                .transitions
-                .iter_all()
-                .flat_map(move |(symbol, to_all)| {
-                    to_all
-                        .iter()
-                        .map(move |to| (state, *symbol, self.state(*to)))
-                })
+                .transitions()
+                .map(move |(symbol, to)| (state, symbol, self.state(to)))
         })
     }
 
     pub fn epsilon_transitions(&self) -> impl Iterator<Item = (&State<A>, &State<A>)> + '_ {
         self.states().flat_map(move |state| {
             state
-                .epsilon_transitions
+                .next_epsilon()
                 .iter()
                 .map(move |to| (state, self.state(*to)))
         })

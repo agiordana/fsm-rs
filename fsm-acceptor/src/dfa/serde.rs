@@ -10,6 +10,7 @@ use super::State;
 impl<A: Alphabet + Serialize> Serialize for Dfa<A> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         #[derive(Serialize)]
+        #[serde(rename = "Dfa")]
         struct DfaHelper<'a, A: Alphabet> {
             states: Vec<&'a State<A>>,
         }
@@ -27,21 +28,22 @@ impl<'de, A: Alphabet + Deserialize<'de>> Deserialize<'de> for Dfa<A> {
         D: Deserializer<'de>,
     {
         #[derive(Deserialize)]
+        #[serde(rename = "Dfa")]
         struct DfaHelper<A: Alphabet> {
             states: Vec<State<A>>,
         }
 
-        let mut helper = DfaHelper::deserialize(deserializer)?;
-        helper.states.sort_by_key(|state| state.id);
+        let helper = DfaHelper::deserialize(deserializer)?;
         let mut dfa = Dfa::new();
-        let mut old2new = HashMap::with_capacity(helper.states.len());
-        for state in &helper.states {
-            let new_id = dfa.add_state(state.accepting);
-            old2new.insert(state.id, new_id);
-        }
-        for (&old_from, &new_from) in &old2new {
-            for (&symbol, old_to) in &helper.states[old_from].transitions {
-                dfa.add_transition(new_from, symbol, old2new[old_to]);
+        let old2new: HashMap<_, _> = helper
+            .states
+            .iter()
+            .map(|state| (state.id, dfa.add_state(state.accepting)))
+            .collect();
+        for old_from_state in &helper.states {
+            let new_from = old2new[&old_from_state.id];
+            for (symbol, old_to) in old_from_state.transitions() {
+                dfa.add_transition(new_from, symbol, old2new[&old_to]);
             }
         }
         Ok(dfa)

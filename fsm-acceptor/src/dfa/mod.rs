@@ -43,9 +43,8 @@ impl<A: Alphabet> Dfa<A> {
     }
 
     pub fn num_transitions(&self) -> usize {
-        self.states
-            .iter()
-            .map(|state| state.transitions.len())
+        self.states()
+            .map(|state| state.num_transitions())
             .sum()
     }
 
@@ -56,9 +55,8 @@ impl<A: Alphabet> Dfa<A> {
     pub fn transitions(&self) -> impl Iterator<Item = (&State<A>, A, &State<A>)> + '_ {
         self.states().flat_map(move |state| {
             state
-                .transitions
-                .iter()
-                .map(move |(symbol, to)| (state, *symbol, self.state(*to)))
+                .transitions()
+                .map(move |(symbol, to)| (state, symbol, self.state(to)))
         })
     }
 }
