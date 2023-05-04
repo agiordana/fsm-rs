@@ -47,3 +47,28 @@ impl<'de, A: Alphabet + Deserialize<'de>> Deserialize<'de> for Dfa<A> {
         Ok(dfa)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test_common::{decltype, generate_words};
+
+    use super::*;
+
+    #[test]
+    fn test_dfa_serde() {
+        let mut dfa = Dfa::new();
+        let a = dfa.add_state(true);
+        let b = dfa.add_state(false);
+        dfa.add_transition(a, '1', a);
+        dfa.add_transition(b, '0', b);
+        dfa.add_transition(a, '0', b);
+        dfa.add_transition(b, '0', a);
+
+        let json = serde_json::to_string(&dfa).unwrap();
+        let dfa2 = decltype(&dfa, serde_json::from_str(&json).unwrap());
+
+        for word in generate_words(&['0', '1'], 10) {
+            assert_eq!(dfa.accepts(word.chars()), dfa2.accepts(word.chars()));
+        }
+    }
+}

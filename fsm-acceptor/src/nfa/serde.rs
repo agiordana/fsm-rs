@@ -54,3 +54,30 @@ impl<'de, A: Alphabet + Deserialize<'de>> Deserialize<'de> for Nfa<A> {
         Ok(dfa)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::test_common::{decltype, generate_words};
+
+    use super::*;
+
+    #[test]
+    fn test_nfa_serde() {
+        let mut nfa = Nfa::new();
+        let a = nfa.add_state(false);
+        let b = nfa.add_state(true);
+        nfa.add_epsilon_transition(a, a);
+        nfa.add_transition(a, '0', a);
+        nfa.add_transition(a, '1', a);
+        nfa.add_transition(a, '1', b);
+        nfa.add_transition(b, '0', a);
+        nfa.add_transition(b, '1', b);
+
+        let json = serde_json::to_string(&nfa).unwrap();
+        let nfa2 = decltype(&nfa, serde_json::from_str(&json).unwrap());
+
+        for word in generate_words(&['0', '1'], 10) {
+            assert_eq!(nfa.accepts(word.chars()), nfa2.accepts(word.chars()));
+        }
+    }
+}

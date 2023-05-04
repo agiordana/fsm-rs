@@ -93,6 +93,10 @@ impl<A: Alphabet> Nfa<A> {
                 .map(move |to| (state, self.state(*to)))
         })
     }
+
+    pub fn accepting(&self, state: StateId) -> bool {
+        self.state(state).accepting
+    }
 }
 
 impl<A: Alphabet> Default for Nfa<A> {
@@ -157,8 +161,8 @@ impl<A: Alphabet> Nfa<A> {
         res
     }
 
-    fn is_accepting(&self, states: impl IntoIterator<Item = StateId>) -> bool {
-        states.into_iter().any(|s| self.state(s).accepting)
+    fn any_accepting(&self, states: impl IntoIterator<Item = StateId>) -> bool {
+        states.into_iter().any(|s| self.accepting(s))
     }
 
     pub fn accepts(&self, word: impl IntoIterator<Item = A>) -> bool {
@@ -172,7 +176,7 @@ impl<A: Alphabet> Nfa<A> {
             current_states = self.multi_next_epsilon_closure(current_states, symbol);
         }
 
-        self.is_accepting(current_states)
+        self.any_accepting(current_states)
     }
 
     pub fn to_dfa(&self, alphabet: &[A]) -> Dfa<A> {
@@ -181,7 +185,7 @@ impl<A: Alphabet> Nfa<A> {
         let mut queue = Vec::new();
 
         let initial_nfa_state = self.epsilon_closure(0);
-        let initial_state = dfa.add_state(self.is_accepting(initial_nfa_state.iter().copied()));
+        let initial_state = dfa.add_state(self.any_accepting(initial_nfa_state.iter().copied()));
         state_map.insert(initial_nfa_state.clone(), initial_state);
         queue.push(initial_nfa_state);
 
@@ -200,7 +204,7 @@ impl<A: Alphabet> Nfa<A> {
                     let next_dfa_state =
                         *state_map.entry(next_nfa_state.clone()).or_insert_with(|| {
                             let new_dfa_state =
-                                dfa.add_state(self.is_accepting(next_nfa_state.iter().copied()));
+                                dfa.add_state(self.any_accepting(next_nfa_state.iter().copied()));
                             queue.push(next_nfa_state);
                             new_dfa_state
                         });
