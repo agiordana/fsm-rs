@@ -149,7 +149,7 @@ impl<A: Alphabet> Nfa<A> {
         symbol: A,
     ) -> BTreeSet<StateId> {
         let mut res = BTreeSet::new();
-        for state in current_states.into_iter() {
+        for state in current_states {
             if let Some(next_states) = self.next(state, symbol) {
                 res.extend(self.multi_epsilon_closure(next_states.clone()))
             }
