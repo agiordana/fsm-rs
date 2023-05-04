@@ -4,15 +4,15 @@ fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
     let mut nfa = Nfa::new();
-    let q0 = nfa.add_state(false);
-    let q1 = nfa.add_state(true);
+    let a = nfa.add_state(false);
+    let b = nfa.add_state(true);
     let _s = nfa.add_state(false);
-    nfa.add_transition(q0, 'a', q1);
-    nfa.add_transition(q0, 'a', q0);
-    nfa.add_transition(q0, 'b', q0);
-    nfa.add_transition(q1, 'a', q1);
-    nfa.add_transition(q1, 'b', q1);
-    nfa.add_transition(q1, 'b', q0);
+    nfa.add_transition(a, 'a', b);
+    nfa.add_transition(a, 'a', a);
+    nfa.add_transition(a, 'b', a);
+    nfa.add_transition(b, 'a', b);
+    nfa.add_transition(b, 'b', b);
+    nfa.add_transition(b, 'b', a);
 
     println!("nfa = {:?}", nfa);
 

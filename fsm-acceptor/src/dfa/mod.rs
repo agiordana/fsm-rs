@@ -117,14 +117,14 @@ mod tests {
         use Sigma::*;
 
         let mut dfa = Dfa::new();
-        dfa.add_state(true);
-        dfa.add_state(false);
+        let a = dfa.add_state(true);
+        let b = dfa.add_state(false);
         // Loops:
-        dfa.add_transition(0, One, 0);
-        dfa.add_transition(1, One, 1);
+        dfa.add_transition(a, One, a);
+        dfa.add_transition(b, One, b);
         // Transitions:
-        dfa.add_transition(0, Zero, 1);
-        dfa.add_transition(1, Zero, 0);
+        dfa.add_transition(a, Zero, b);
+        dfa.add_transition(b, Zero, a);
 
         // This DFA accepts all words with even number of Zeros
         assert!(dfa.accepts(vec![]));

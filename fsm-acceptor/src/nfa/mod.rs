@@ -220,14 +220,14 @@ mod tests {
         use Sigma::*;
 
         let mut nfa = Nfa::new();
-        nfa.add_state(true);
-        nfa.add_state(false);
+        let a = nfa.add_state(true);
+        let b = nfa.add_state(false);
         // Loops:
-        nfa.add_transition(0, One, 0);
-        nfa.add_transition(1, One, 1);
+        nfa.add_transition(a, One, a);
+        nfa.add_transition(b, One, b);
         // Transitions:
-        nfa.add_transition(0, Zero, 1);
-        nfa.add_transition(1, Zero, 0);
+        nfa.add_transition(a, Zero, b);
+        nfa.add_transition(b, Zero, a);
 
         // This NFA (actually, DFA) accepts all words with even number of Zeros
         assert!(nfa.accepts(vec![]));
@@ -255,14 +255,14 @@ mod tests {
         use Sigma::*;
 
         let mut nfa = Nfa::new();
-        nfa.add_state(false);
-        nfa.add_state(true);
-        nfa.add_epsilon_transition(0, 0);
-        nfa.add_transition(0, Zero, 0);
-        nfa.add_transition(0, One, 0);
-        nfa.add_transition(0, One, 1);
-        nfa.add_transition(1, Zero, 0);
-        nfa.add_transition(1, One, 1);
+        let a = nfa.add_state(false);
+        let b = nfa.add_state(true);
+        nfa.add_epsilon_transition(a, a);
+        nfa.add_transition(a, Zero, a);
+        nfa.add_transition(a, One, a);
+        nfa.add_transition(a, One, b);
+        nfa.add_transition(b, Zero, a);
+        nfa.add_transition(b, One, b);
 
         // This NFA accepts only words ending with One
         assert!(nfa.accepts(vec![One]));
@@ -287,14 +287,14 @@ mod tests {
         use Sigma::*;
 
         let mut nfa = Nfa::new();
-        nfa.add_state(false);
-        nfa.add_state(true);
-        nfa.add_epsilon_transition(0, 0);
-        nfa.add_transition(0, Zero, 0);
-        nfa.add_transition(0, One, 0);
-        nfa.add_transition(0, One, 1);
-        nfa.add_transition(1, Zero, 0);
-        nfa.add_transition(1, One, 1);
+        let a = nfa.add_state(false);
+        let b = nfa.add_state(true);
+        nfa.add_epsilon_transition(a, a);
+        nfa.add_transition(a, Zero, a);
+        nfa.add_transition(a, One, a);
+        nfa.add_transition(a, One, b);
+        nfa.add_transition(b, Zero, a);
+        nfa.add_transition(b, One, b);
 
         let dfa = nfa.to_dfa(&[Zero, One]);
 
