@@ -88,15 +88,12 @@ impl<A: Alphabet> Dfa<A> {
         self.state(current_state).next(symbol)
     }
 
-    pub fn accepts<I>(&self, word: I) -> bool
-    where
-        I: IntoIterator<Item = A>,
-    {
+    pub fn accepts(&self, word: impl IntoIterator<Item = A>) -> bool {
         if self.states.is_empty() {
             return false;
         }
         let mut current_state = 0;
-        for symbol in word.into_iter() {
+        for symbol in word {
             if let Some(next_state) = self.next(current_state, symbol) {
                 current_state = next_state;
             } else {
