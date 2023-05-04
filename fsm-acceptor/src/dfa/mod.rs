@@ -23,6 +23,14 @@ impl<A: Alphabet> Dfa<A> {
         }
     }
 
+    pub fn add_state(&mut self, accepting: bool) -> StateId {
+        self.states.alloc_with_id(|id| State::new(id, accepting))
+    }
+
+    pub fn add_transition(&mut self, from: StateId, symbol: A, to: StateId) {
+        self.state_mut(from).add_transition(symbol, to);
+    }
+
     pub fn state(&self, index: StateId) -> &State<A> {
         &self.states[index]
     }
@@ -30,12 +38,8 @@ impl<A: Alphabet> Dfa<A> {
         &mut self.states[index]
     }
 
-    pub fn add_state(&mut self, accepting: bool) -> StateId {
-        self.states.alloc_with_id(|id| State::new(id, accepting))
-    }
-
-    pub fn add_transition(&mut self, from: StateId, symbol: A, to: StateId) {
-        self.state_mut(from).add_transition(symbol, to);
+    pub fn accepting(&self, state: StateId) -> bool {
+        self.state(state).accepting
     }
 
     pub fn num_states(&self) -> usize {

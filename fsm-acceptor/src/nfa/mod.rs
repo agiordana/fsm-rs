@@ -25,13 +25,6 @@ impl<A: Alphabet> Nfa<A> {
         }
     }
 
-    pub fn state(&self, index: StateId) -> &State<A> {
-        &self.states[index]
-    }
-    pub fn state_mut(&mut self, index: StateId) -> &mut State<A> {
-        &mut self.states[index]
-    }
-
     pub fn add_state(&mut self, accepting: bool) -> StateId {
         self.states.alloc_with_id(|id| State::new(id, accepting))
     }
@@ -44,22 +37,27 @@ impl<A: Alphabet> Nfa<A> {
         self.state_mut(from).add_epsilon_transition(to);
     }
 
+    pub fn state(&self, index: StateId) -> &State<A> {
+        &self.states[index]
+    }
+    pub fn state_mut(&mut self, index: StateId) -> &mut State<A> {
+        &mut self.states[index]
+    }
+
     pub fn num_states(&self) -> usize {
         self.states.len()
     }
 
     pub fn num_transitions(&self) -> usize {
-        self.states
-            .iter()
-            .map(|state| state.num_transitions())
-            .sum()
+        self.states().map(|state| state.num_transitions()).sum()
     }
 
     pub fn num_epsilon_transitions(&self) -> usize {
-        self.states
-            .iter()
-            .map(|state| state.next_epsilon().len())
-            .sum()
+        self.states().map(|state| state.next_epsilon().len()).sum()
+    }
+
+    pub fn accepting(&self, state: StateId) -> bool {
+        self.state(state).accepting
     }
 
     pub fn states(&self) -> impl Iterator<Item = &State<A>> {
@@ -81,10 +79,6 @@ impl<A: Alphabet> Nfa<A> {
                 .iter()
                 .map(move |to| (state, self.state(*to)))
         })
-    }
-
-    pub fn accepting(&self, state: StateId) -> bool {
-        self.state(state).accepting
     }
 }
 
