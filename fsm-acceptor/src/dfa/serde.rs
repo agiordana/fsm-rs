@@ -52,7 +52,7 @@ impl<'de, A: Alphabet + Deserialize<'de>> Deserialize<'de> for Dfa<A> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_common::{decltype, generate_words};
+    use crate::test_common::{decltype, generate_strings};
 
     use super::*;
 
@@ -69,7 +69,7 @@ mod tests {
         let json = serde_json::to_string(&dfa).unwrap();
         let dfa2 = decltype(&dfa, serde_json::from_str(&json).unwrap());
 
-        for word in generate_words(&['0', '1'], 10) {
+        for word in generate_strings(&['0', '1'], 10) {
             assert_eq!(dfa.accepts(word.chars()), dfa2.accepts(word.chars()));
         }
     }

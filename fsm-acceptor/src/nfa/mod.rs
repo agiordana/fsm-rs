@@ -185,6 +185,7 @@ impl<A: Alphabet> Nfa<A> {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_common::{generate_strings, generate_words};
     use super::*;
 
     #[test]
@@ -286,5 +287,9 @@ mod tests {
         assert!(!dfa.accepts(vec![One, Zero, Zero, Zero]));
         assert!(!dfa.accepts(vec![One, Zero, Zero, Zero]));
         assert!(!dfa.accepts(vec![One, One, Zero, Zero]));
+
+        for word in generate_words(&[Zero, One], 10) {
+            assert_eq!(dfa.accepts(word.clone()), nfa.accepts(word));
+        }
     }
 }
