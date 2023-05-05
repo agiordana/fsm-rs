@@ -6,6 +6,7 @@ use state::{State, StateId};
 use crate::alphabet::Alphabet;
 use crate::dfa::Dfa;
 use crate::util::arena::Arena;
+use crate::util::dfs::multi_dfs;
 
 pub mod graphviz;
 pub mod state;
@@ -111,37 +112,12 @@ impl<A: Alphabet> Nfa<A> {
         self.state(state).next_epsilon()
     }
 
-    fn epsilon_closure(&self, start: StateId) -> BTreeSet<StateId> {
+    fn epsilon_closure(&self, start: StateId) -> impl Iterator<Item = StateId> + '_ {
         self.multi_epsilon_closure(vec![start])
     }
 
-    fn multi_epsilon_closure(&self, start: Vec<StateId>) -> BTreeSet<StateId> {
-        let mut visited = BTreeSet::new();
-        let mut stack = start;
-
-        while let Some(state) = stack.pop() {
-            if visited.insert(state) {
-                for &next_state in self.next_epsilon(state) {
-                    stack.push(next_state);
-                }
-            }
-        }
-
-        visited
-    }
-
-    fn multi_next_epsilon_closure(
-        &self,
-        current_states: impl IntoIterator<Item = StateId>,
-        symbol: A,
-    ) -> BTreeSet<StateId> {
-        let mut res = BTreeSet::new();
-        for state in current_states {
-            if let Some(next_states) = self.next(state, symbol) {
-                res.extend(self.multi_epsilon_closure(next_states.clone()))
-            }
-        }
-        res
+    fn multi_epsilon_closure(&self, start: Vec<StateId>) -> impl Iterator<Item = StateId> + '_ {
+        multi_dfs(start, |state| self.next_epsilon(state).iter().copied())
     }
 
     fn any_accepting(&self, states: impl IntoIterator<Item = StateId>) -> bool {
@@ -153,13 +129,19 @@ impl<A: Alphabet> Nfa<A> {
             return false;
         }
 
-        let mut current_states = self.epsilon_closure(0);
+        let mut current = self.epsilon_closure(0).collect::<BTreeSet<_>>();
 
         for symbol in word {
-            current_states = self.multi_next_epsilon_closure(current_states, symbol);
+            let mut next = BTreeSet::new();
+            for state in current {
+                if let Some(next_states) = self.next(state, symbol) {
+                    next.extend(self.multi_epsilon_closure(next_states.clone()))
+                }
+            }
+            current = next;
         }
 
-        self.any_accepting(current_states)
+        self.any_accepting(current)
     }
 
     pub fn to_dfa(&self, alphabet: &[A]) -> Dfa<A> {
@@ -167,9 +149,10 @@ impl<A: Alphabet> Nfa<A> {
         let mut state_map = HashMap::new();
         let mut queue = Vec::new();
 
-        let initial_nfa_state = self.epsilon_closure(0);
-        let initial_state = dfa.add_state(self.any_accepting(initial_nfa_state.iter().copied()));
-        state_map.insert(initial_nfa_state.clone(), initial_state);
+        let initial_nfa_state = self.epsilon_closure(0).collect::<BTreeSet<_>>();
+        let initial_accepting = self.any_accepting(initial_nfa_state.iter().copied());
+        let initial_dfa_state = dfa.add_state(initial_accepting);
+        state_map.insert(initial_nfa_state.clone(), initial_dfa_state);
         queue.push(initial_nfa_state);
 
         while let Some(current_nfa_state) = queue.pop() {
@@ -186,8 +169,8 @@ impl<A: Alphabet> Nfa<A> {
                 if !next_nfa_state.is_empty() {
                     let next_dfa_state =
                         *state_map.entry(next_nfa_state.clone()).or_insert_with(|| {
-                            let new_dfa_state =
-                                dfa.add_state(self.any_accepting(next_nfa_state.iter().copied()));
+                            let accepting = self.any_accepting(next_nfa_state.iter().copied());
+                            let new_dfa_state = dfa.add_state(accepting);
                             queue.push(next_nfa_state);
                             new_dfa_state
                         });
