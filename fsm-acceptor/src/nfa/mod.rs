@@ -185,7 +185,8 @@ impl<A: Alphabet> Nfa<A> {
 
 #[cfg(test)]
 mod tests {
-    use crate::test_common::{generate_strings, generate_words};
+    use crate::test_common::generate_words;
+
     use super::*;
 
     #[test]
