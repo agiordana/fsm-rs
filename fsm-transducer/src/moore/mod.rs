@@ -101,12 +101,10 @@ impl<I: Alphabet, O: Alphabet> Moore<I, O> {
         <Inputs as IntoIterator>::IntoIter: 'a,
     {
         let mut current_state = 0;
-        let mut inputs = inputs.into_iter();
-        std::iter::from_fn(move || {
-            let input: I = inputs.next()?;
+        inputs.into_iter().map(move |input: I| {
             let (next_state, output) = self.next(current_state, input).unwrap();
             current_state = next_state;
-            Some((input, current_state, output))
+            (input, current_state, output)
         })
     }
 }
