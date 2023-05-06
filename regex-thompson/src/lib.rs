@@ -27,11 +27,11 @@ pub struct Fragment {
 }
 
 #[derive(Debug)]
-pub struct States {
+pub struct Nfa {
     states: Vec<State>,
 }
 
-impl States {
+impl Nfa {
     pub fn new() -> Self {
         Self { states: Vec::new() }
     }
@@ -51,7 +51,7 @@ impl States {
     }
 }
 
-impl Index<usize> for States {
+impl Index<usize> for Nfa {
     type Output = State;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -59,13 +59,13 @@ impl Index<usize> for States {
     }
 }
 
-impl IndexMut<usize> for States {
+impl IndexMut<usize> for Nfa {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.states[index]
     }
 }
 
-impl States {
+impl Nfa {
     pub fn parse(&mut self, pattern: &str) -> Fragment {
         let postfix = to_postfix(&insert_explicit_concat_operator(pattern));
         let mut stack = Vec::new();
@@ -240,14 +240,14 @@ fn to_postfix(pattern: &str) -> String {
 }
 
 #[derive(Debug)]
-struct Nfa {
-    states: States,
+struct Regex {
+    states: Nfa,
     start: usize,
 }
 
-impl Nfa {
+impl Regex {
     pub fn new(pattern: &str) -> Self {
-        let mut states = States::new();
+        let mut states = Nfa::new();
         let f = states.parse(pattern);
         Self {
             states,
@@ -261,8 +261,8 @@ impl Nfa {
 }
 
 pub fn is_match(input: &str, pattern: &str) -> bool {
-    let nfa = Nfa::new(pattern);
-    nfa.matches(input)
+    let re = Regex::new(pattern);
+    re.matches(input)
 }
 
 #[cfg(test)]
@@ -271,80 +271,80 @@ mod tests {
 
     #[test]
     fn test_pattern_a() {
-        let nfa = Nfa::new("a");
-        assert!(nfa.matches("a"));
-        assert!(!nfa.matches("ab"));
-        assert!(!nfa.matches("aa"));
-        assert!(!nfa.matches("b"));
+        let re = Regex::new("a");
+        assert!(re.matches("a"));
+        assert!(!re.matches("ab"));
+        assert!(!re.matches("aa"));
+        assert!(!re.matches("b"));
     }
 
     #[test]
     fn test_pattern_a_or_b() {
-        let nfa = Nfa::new("a|b");
-        assert!(nfa.matches("a"));
-        assert!(nfa.matches("b"));
-        assert!(!nfa.matches("ab"));
-        assert!(!nfa.matches("aa"));
-        assert!(!nfa.matches("ba"));
+        let re = Regex::new("a|b");
+        assert!(re.matches("a"));
+        assert!(re.matches("b"));
+        assert!(!re.matches("ab"));
+        assert!(!re.matches("aa"));
+        assert!(!re.matches("ba"));
     }
 
     #[test]
     fn test_pattern_debug() {
-        let nfa = Nfa::new("(a|b)*");
-        assert!(nfa.matches("a"));
-        assert!(nfa.matches("b"));
-        assert!(nfa.matches("aa"));
-        assert!(nfa.matches("bb"));
-        assert!(nfa.matches("ab"));
-        assert!(nfa.matches("ba"));
-        assert!(nfa.matches("aaa"));
-        assert!(nfa.matches("aba"));
+        let re = Regex::new("(a|b)*");
+        assert!(re.matches("a"));
+        assert!(re.matches("b"));
+        assert!(re.matches("aa"));
+        assert!(re.matches("bb"));
+        assert!(re.matches("ab"));
+        assert!(re.matches("ba"));
+        assert!(re.matches("aaa"));
+        assert!(re.matches("aba"));
     }
 
     #[test]
     fn test_pattern_complex() {
-        let nfa = Nfa::new("a(b|c)*d");
-        assert!(nfa.matches("ad"));
-        assert!(nfa.matches("abd"));
-        assert!(nfa.matches("acd"));
-        assert!(nfa.matches("abbd"));
-        assert!(nfa.matches("abcd"));
-        assert!(nfa.matches("accd"));
-        assert!(nfa.matches("acbd"));
-        assert!(nfa.matches("abbbd"));
-        assert!(nfa.matches("acccd"));
-        assert!(!nfa.matches("a"));
-        assert!(!nfa.matches("b"));
-        assert!(!nfa.matches("c"));
-        assert!(!nfa.matches("d"));
-        assert!(!nfa.matches("ab"));
-        assert!(!nfa.matches("ac"));
-        assert!(!nfa.matches("aad"));
+        let re = Regex::new("a(b|c)*d");
+        assert!(re.matches("ad"));
+        assert!(re.matches("abd"));
+        assert!(re.matches("acd"));
+        assert!(re.matches("abbd"));
+        assert!(re.matches("abcd"));
+        assert!(re.matches("accd"));
+        assert!(re.matches("acbd"));
+        assert!(re.matches("abbbd"));
+        assert!(re.matches("acccd"));
+        assert!(!re.matches("a"));
+        assert!(!re.matches("b"));
+        assert!(!re.matches("c"));
+        assert!(!re.matches("d"));
+        assert!(!re.matches("ab"));
+        assert!(!re.matches("ac"));
+        assert!(!re.matches("aad"));
     }
 
     #[test]
     fn test_fragment_concat_ab() {
-        let mut states = States::new();
-        let f1 = states.symbol('a');
-        let f2 = states.symbol('b');
-        let f3 = states.concat(f1, f2);
+        let mut nfa = Nfa::new();
+        let f1 = nfa.symbol('a');
+        let f2 = nfa.symbol('b');
+        let f3 = nfa.concat(f1, f2);
 
-        assert!(states.matches(f3.start, "ab"));
-        assert!(!states.matches(f3.start, "aba"));
-        assert!(!states.matches(f3.start, "a"));
-        assert!(!states.matches(f3.start, "b"));
+        assert!(nfa.matches(f3.start, "ab"));
+        assert!(!nfa.matches(f3.start, "aba"));
+        assert!(!nfa.matches(f3.start, "a"));
+        assert!(!nfa.matches(f3.start, "b"));
     }
 
     #[test]
     fn test_fragment_union_ab() {
-        let mut states = States::new();
-        let f1 = states.symbol('a');
-        let f2 = states.symbol('b');
-        let f3 = states.union(f1, f2);
+        let mut nfa = Nfa::new();
+        let f1 = nfa.symbol('a');
+        let f2 = nfa.symbol('b');
+        let f3 = nfa.union(f1, f2);
 
-        assert!(!states.matches(f3.start, "ab"));
-        assert!(!states.matches(f3.start, "aba"));
-        assert!(states.matches(f3.start, "a"));
-        assert!(states.matches(f3.start, "b"));
+        assert!(!nfa.matches(f3.start, "ab"));
+        assert!(!nfa.matches(f3.start, "aba"));
+        assert!(nfa.matches(f3.start, "a"));
+        assert!(nfa.matches(f3.start, "b"));
     }
 }
