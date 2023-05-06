@@ -1,64 +1,32 @@
 use std::collections::HashSet;
 use std::hash::Hash;
 
-pub fn dfs<T, F, I>(start: T, neighbors: F) -> Dfs<T, F>
+pub fn dfs<T, F, I>(start: T, neighbors: F) -> impl Iterator<Item = T>
 where
     T: Hash + Eq + Copy,
     F: Fn(T) -> I,
     I: IntoIterator<Item = T>,
 {
-    Dfs::new(vec![start], neighbors)
+    multi_dfs(vec![start], neighbors)
 }
 
-pub fn multi_dfs<T, F, I>(start: Vec<T>, neighbors: F) -> Dfs<T, F>
+pub fn multi_dfs<T, F, I>(start: Vec<T>, neighbors: F) -> impl Iterator<Item = T>
 where
     T: Hash + Eq + Copy,
     F: Fn(T) -> I,
     I: IntoIterator<Item = T>,
 {
-    Dfs::new(start, neighbors)
-}
-
-#[derive(Debug)]
-pub struct Dfs<T, F> {
-    stack: Vec<T>,
-    visited: HashSet<T>,
-    neighbors: F,
-}
-
-impl<T, F, I> Dfs<T, F>
-where
-    F: Fn(T) -> I,
-    I: IntoIterator<Item = T>,
-{
-    pub fn new(stack: Vec<T>, neighbors: F) -> Self {
-        Dfs {
-            stack,
-            visited: HashSet::new(),
-            neighbors,
-        }
-    }
-}
-
-impl<T, F, I> Iterator for Dfs<T, F>
-where
-    T: Hash + Eq + Copy,
-    F: Fn(T) -> I,
-    I: IntoIterator<Item = T>,
-{
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        while let Some(state) = self.stack.pop() {
-            if self.visited.insert(state) {
-                for next_state in (self.neighbors)(state) {
-                    self.stack.push(next_state);
-                }
+    let mut visited = HashSet::new();
+    let mut stack = start;
+    std::iter::from_fn(move || {
+        while let Some(state) = stack.pop() {
+            if visited.insert(state) {
+                stack.extend(neighbors(state));
                 return Some(state);
             }
         }
         None
-    }
+    })
 }
 
 #[cfg(test)]
