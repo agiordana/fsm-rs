@@ -124,7 +124,7 @@ mod tests {
         fsm.add_transition(p1, 0, p0, false);
         fsm.add_transition(p1, 1, p1, true);
 
-        let inputs = vec![0,1,1,0,0];
+        let inputs = vec![0, 1, 1, 0, 0];
         println!("Running Moore machine on {:?}", inputs);
         let mut current_state = 0;
         let mut outputs = Vec::new();

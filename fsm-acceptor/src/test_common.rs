@@ -1,12 +1,12 @@
-use std::collections::VecDeque;
 use crate::alphabet::Alphabet;
+use std::collections::VecDeque;
 
 #[inline]
 pub fn decltype<T>(_: &T, x: T) -> T {
     x
 }
 
-pub fn generate_words<A:Alphabet>(symbols: &[A], max_length: usize) -> Vec<Vec<A>> {
+pub fn generate_words<A: Alphabet>(symbols: &[A], max_length: usize) -> Vec<Vec<A>> {
     let mut words = Vec::new();
     let mut queue = VecDeque::new();
     queue.push_back(Vec::new());
@@ -26,7 +26,6 @@ pub fn generate_words<A:Alphabet>(symbols: &[A], max_length: usize) -> Vec<Vec<A
 
     words
 }
-
 
 pub fn generate_strings(symbols: &[char], max_length: usize) -> Vec<String> {
     let mut words = Vec::new();
