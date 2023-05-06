@@ -260,7 +260,7 @@ impl Regex {
     }
 }
 
-pub fn is_match(input: &str, pattern: &str) -> bool {
+pub fn is_match(pattern: &str, input: &str) -> bool {
     let re = Regex::new(pattern);
     re.matches(input)
 }
