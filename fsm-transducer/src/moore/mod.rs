@@ -103,7 +103,7 @@ impl<I: Alphabet, O: Alphabet> Moore<I, O> {
         let mut current_state = 0;
         let mut inputs = inputs.into_iter();
         std::iter::from_fn(move || {
-            let input: I = inputs.next().unwrap();
+            let input: I = inputs.next()?;
             let (next_state, output) = self.next(current_state, input).unwrap();
             current_state = next_state;
             Some((input, current_state, output))
