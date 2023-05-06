@@ -28,7 +28,7 @@ fn main() -> color_eyre::Result<()> {
 
     let dfa3: Dfa<char> = serde_json::from_str(&json3)?;
     println!("dfa3 = {:?}", dfa3);
-    println!("{}", fsm_acceptor::dfa::graphviz::render_dfa(&dfa3));
+    println!("{}", dfa3.render_graphviz());
 
     Ok(())
 }

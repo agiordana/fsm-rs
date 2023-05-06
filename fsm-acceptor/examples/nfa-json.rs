@@ -34,7 +34,7 @@ fn main() -> color_eyre::Result<()> {
 
     let nfa3: Nfa<char> = serde_json::from_str(&json3)?;
     println!("nfa3 = {:?}", nfa3);
-    println!("{}", fsm_acceptor::nfa::graphviz::render_nfa(&nfa3));
+    println!("{}", nfa3.render_graphviz());
 
     Ok(())
 }

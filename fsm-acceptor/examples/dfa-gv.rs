@@ -1,4 +1,3 @@
-use fsm_acceptor::dfa::graphviz::render_dfa;
 use fsm_acceptor::dfa::Dfa;
 
 fn main() -> color_eyre::Result<()> {
@@ -13,7 +12,7 @@ fn main() -> color_eyre::Result<()> {
     dfa.add_transition(b, 'b', a);
     dfa.add_transition(b, 'a', b);
     // println!("dfa = {:?}", dfa);
-    println!("{}", render_dfa(&dfa));
+    println!("{}", dfa.render_graphviz());
 
     Ok(())
 }
