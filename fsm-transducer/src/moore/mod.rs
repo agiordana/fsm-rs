@@ -89,8 +89,10 @@ impl<I: Alphabet, O: Alphabet> IndexMut<StateId> for Moore<I, O> {
 }
 
 impl<I: Alphabet, O: Alphabet> Moore<I, O> {
-    pub fn next(&self, current_state: StateId, input: I) -> Option<StateId> {
-        self.state(current_state).next(input)
+    pub fn next(&self, current_state: StateId, input: I) -> Option<(StateId, O)> {
+        self.state(current_state)
+            .next(input)
+            .map(|next_state| (next_state, self.state(next_state).output))
     }
 
     pub fn run<'a, Inputs>(&'a self, inputs: Inputs) -> impl Iterator<Item = (I, StateId, O)> + '_
@@ -101,15 +103,13 @@ impl<I: Alphabet, O: Alphabet> Moore<I, O> {
         let mut current_state = 0;
         let mut inputs = inputs.into_iter();
         std::iter::from_fn(move || {
-            let input: I = inputs.next()?;
-            let next_state = self.next(current_state, input)?;
-            let output = self.state(next_state).output;
+            let input: I = inputs.next().unwrap();
+            let (next_state, output) = self.next(current_state, input).unwrap();
             current_state = next_state;
             Some((input, current_state, output))
         })
     }
 }
-
 
 #[cfg(test)]
 mod tests {
