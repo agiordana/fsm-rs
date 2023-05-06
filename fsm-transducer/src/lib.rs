@@ -1,9 +1,5 @@
-pub mod fsm;
-pub mod guard;
-pub mod output;
-pub mod state;
-pub mod symbol;
-pub mod transition;
+pub mod alphabet;
+// pub mod mealy;
+pub mod moore;
 
-#[cfg(test)]
-mod tests;
+pub(crate) mod util;
