@@ -8,7 +8,7 @@ image:https://github.com/Lipen/fsm-rs/workflows/CI/badge.svg["Build Status",link
 
 [source,rust,linenums]
 ----
-use fsm_acceptor::dfa::Dfa;
+use fsm::dfa::Dfa;
 
 fn main() {
     let mut dfa: Dfa<char> = Dfa::new();
@@ -33,7 +33,7 @@ fn main() {
 
 [source,rust,linenums]
 ----
-use fsm_acceptor::nfa::Nfa;
+use fsm::nfa::Nfa;
 
 fn main() {
     let mut nfa: Nfa<char> = Nfa::new();

@@ -1,4 +1,4 @@
-use fsm_acceptor::dfa::Dfa;
+use fsm::dfa::Dfa;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
