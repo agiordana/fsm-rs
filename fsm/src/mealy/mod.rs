@@ -7,8 +7,8 @@ use crate::util::arena::Arena;
 
 pub mod state;
 
-// #[cfg(feature = "serde")]
-// mod serde;
+#[cfg(feature = "serde")]
+mod serde;
 
 /// Mealy machine is a tuple $(Q, q_0, \Sigma, \Lambda, \delta, \omega)$, where
 /// - $Q$ is a set of states,
