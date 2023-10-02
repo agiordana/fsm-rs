@@ -15,8 +15,8 @@ fn main() -> Result<(), ()> {
     let (next, out) = mealy.next(current,"0").unwrap();
     println!("newstate: {}, output: {}", next, out);
     let json_mealy = serde_json::to_string_pretty(&mealy).unwrap();
+    println!("JASON = {}", json_mealy);
     let mealy_json: Mealy<&str,&str> = serde_json::from_str(&json_mealy).unwrap();
-    println!("mealy_json = {:?}", json_mealy);
     let json_mealy1 = serde_json::to_string_pretty(&mealy_json).unwrap();
     println!("Json1: {}", json_mealy1);
     Ok(())
